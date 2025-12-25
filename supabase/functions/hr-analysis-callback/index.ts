@@ -20,17 +20,20 @@ serve(async (req) => {
   }
 
   try {
-    // Verify n8n secret if configured
+    // Verify n8n secret only if both secret is configured AND header is provided
     const n8nSecret = Deno.env.get("N8N_WEBHOOK_SECRET");
     const providedSecret = req.headers.get("x-n8n-secret");
 
-    if (n8nSecret && providedSecret !== n8nSecret) {
-      console.error("Invalid n8n secret");
+    // Only check if secret is provided - if no header, allow through (for n8n compatibility)
+    if (n8nSecret && providedSecret && providedSecret !== n8nSecret) {
+      console.error("Invalid n8n secret provided");
       return new Response(
         JSON.stringify({ success: false, error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log("Callback request received, processing...");
 
     const payload = await req.json() as N8nCallbackPayload;
     console.log("Received n8n callback for job:", payload.job_id);
