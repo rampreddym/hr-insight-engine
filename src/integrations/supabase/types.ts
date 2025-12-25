@@ -14,7 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analysis_jobs: {
+        Row: {
+          company_name: string | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          hcm_url: string
+          id: string
+          input: Json | null
+          results: Json | null
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          company_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          hcm_url: string
+          id?: string
+          input?: Json | null
+          results?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          company_name?: string | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          hcm_url?: string
+          id?: string
+          input?: Json | null
+          results?: Json | null
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      hr_processes: {
+        Row: {
+          analysis_job_id: string | null
+          bersin_score: number | null
+          created_at: string
+          gartner_score: number | null
+          id: string
+          logs: Json | null
+          overall_score: number
+          process_name: string
+          recommendations: Json | null
+          status: string
+          ulrich_score: number | null
+        }
+        Insert: {
+          analysis_job_id?: string | null
+          bersin_score?: number | null
+          created_at?: string
+          gartner_score?: number | null
+          id?: string
+          logs?: Json | null
+          overall_score?: number
+          process_name: string
+          recommendations?: Json | null
+          status?: string
+          ulrich_score?: number | null
+        }
+        Update: {
+          analysis_job_id?: string | null
+          bersin_score?: number | null
+          created_at?: string
+          gartner_score?: number | null
+          id?: string
+          logs?: Json | null
+          overall_score?: number
+          process_name?: string
+          recommendations?: Json | null
+          status?: string
+          ulrich_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_processes_analysis_job_id_fkey"
+            columns: ["analysis_job_id"]
+            isOneToOne: false
+            referencedRelation: "analysis_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
