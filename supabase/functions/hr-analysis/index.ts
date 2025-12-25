@@ -100,7 +100,7 @@ serve(async (req) => {
       company_name: companyName,
       analysis_type: analysisType,
       frameworks: frameworks,
-      callback_url: `${supabaseUrl}/functions/v1/hr-analysis-callback`,
+      callback_url: "https://nedmlrscejohohuuoqgt.supabase.co/functions/v1/hr-analysis-callback",
     };
 
     const n8nResponse = await fetch(n8nWebhookUrl, {
