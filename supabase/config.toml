@@ -1,1 +1,7 @@
 project_id = "qlzlzfcqzwrrfhpsseka"
+
+[functions.hr-analysis]
+verify_jwt = false
+
+[functions.hr-analysis-callback]
+verify_jwt = false
