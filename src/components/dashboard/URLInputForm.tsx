@@ -1,26 +1,59 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link2, Loader2, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { triggerHRAnalysisWorkflow } from "@/lib/n8n";
+import { triggerHRAnalysis, subscribeToJobUpdates, AnalysisJob } from "@/lib/hrAnalysis";
 
 interface URLInputFormProps {
-  onAnalysisStart: () => void;
-  onAnalysisComplete: () => void;
+  onAnalysisStart?: () => void;
+  onAnalysisComplete?: () => void;
 }
 
 export const URLInputForm = ({ onAnalysisStart, onAnalysisComplete }: URLInputFormProps) => {
   const [url, setUrl] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [step, setStep] = useState<'input' | 'connecting' | 'extracting' | 'analyzing' | 'complete'>('input');
+  const [currentJobId, setCurrentJobId] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const steps = [
     { id: 'connecting', label: 'Connecting to HCM System', icon: Link2 },
     { id: 'extracting', label: 'Extracting Process Logs', icon: Sparkles },
     { id: 'analyzing', label: 'Analyzing with n8n & HR Frameworks', icon: Sparkles },
   ];
+
+  // Subscribe to job updates when we have a job ID
+  useEffect(() => {
+    if (!currentJobId) return;
+
+    const unsubscribe = subscribeToJobUpdates(currentJobId, (job: AnalysisJob) => {
+      if (job.status === 'completed') {
+        setStep('complete');
+        setIsAnalyzing(false);
+        toast({
+          title: "Analysis Complete",
+          description: "Your HR process analysis is ready to view",
+        });
+        setTimeout(() => {
+          onAnalysisComplete?.();
+          navigate("/dashboard");
+        }, 1000);
+      } else if (job.status === 'failed') {
+        setIsAnalyzing(false);
+        setStep('input');
+        toast({
+          title: "Analysis Failed",
+          description: job.error_message || "Please try again",
+          variant: "destructive",
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, [currentJobId, navigate, onAnalysisComplete, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,45 +68,47 @@ export const URLInputForm = ({ onAnalysisStart, onAnalysisComplete }: URLInputFo
     }
 
     setIsAnalyzing(true);
-    onAnalysisStart();
+    onAnalysisStart?.();
 
     try {
       // Step 1: Connecting
       setStep('connecting');
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Step 2: Extracting
       setStep('extracting');
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Step 3: Analyzing with n8n
       setStep('analyzing');
       
-      // Trigger the n8n workflow
-      const result = await triggerHRAnalysisWorkflow({
+      // Trigger the actual analysis
+      const result = await triggerHRAnalysis({
         hcmUrl: url,
         analysisType: 'full',
         frameworks: ['bersin', 'gartner', 'ulrich'],
       });
       
-      // Simulate additional processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
       if (!result.success) {
         throw new Error(result.error || 'Analysis failed');
       }
-      
-      setStep('complete');
-      setIsAnalyzing(false);
-      
-      toast({
-        title: "Analysis Complete",
-        description: "Your HR process analysis is ready to view",
-      });
 
-      setTimeout(() => {
-        onAnalysisComplete();
-      }, 1000);
+      // If we got immediate results (mock mode), complete now
+      if (result.results) {
+        setStep('complete');
+        setIsAnalyzing(false);
+        toast({
+          title: "Analysis Complete",
+          description: "Your HR process analysis is ready to view",
+        });
+        setTimeout(() => {
+          onAnalysisComplete?.();
+          navigate("/dashboard");
+        }, 1000);
+      } else if (result.jobId) {
+        // Otherwise, subscribe to updates
+        setCurrentJobId(result.jobId);
+      }
       
     } catch (error) {
       console.error('Analysis error:', error);
