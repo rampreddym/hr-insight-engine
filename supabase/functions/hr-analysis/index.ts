@@ -55,8 +55,8 @@ serve(async (req) => {
 
     console.log("Created analysis job:", job.id);
 
-    // Get n8n webhook configuration
-    const n8nWebhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
+    // n8n webhook configuration - hardcoded URL
+    const n8nWebhookUrl = "https://n8n.srv1154843.hstgr.cloud/webhook/hr-analysis";
     const n8nWebhookSecret = Deno.env.get("N8N_WEBHOOK_SECRET");
 
     if (!n8nWebhookUrl) {
